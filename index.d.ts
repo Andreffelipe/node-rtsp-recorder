@@ -14,12 +14,13 @@ declare class Recorder {
         url?: string
         timeLimit?: number
         setTimeout?: number
+        showCam?: { show: boolean, timeout?: number }
         folder?: string
         type?: string
         directoryPathFormat?: string
         fileNameFormat?: string
         audioCodec?: string
-        options?:{ detached: boolean, stdio: string }
+        options?: { detached: boolean, stdio: string }
     })
     getDirectoryPath(): string
     getTodayPath(): string
@@ -30,7 +31,7 @@ declare class Recorder {
     getChildProcess(fileName: string): any
     stopRecording(): void
     startRecording(): boolean
-    captureImage( name: string ,cb?: () => void,error?: (error:Error) => void,): void
+    captureImage(name: string, cb?: () => void, error?: (error: Error) => void,): void
     killStream(): void
     recordStream(): boolean
 }

@@ -9,8 +9,7 @@ const moment = require('moment')
 const childProcess = require('node:child_process')
 const path = require('node:path')
 const FileHandler = require('./fileHandler')
-const StreamWorker = require('./showCam')
-
+const { Worker } = require('worker_threads');
 const fh = new FileHandler()
 
 const RTSPRecorder = class {
@@ -20,7 +19,7 @@ const RTSPRecorder = class {
     this.url = config.url
     this.timeLimit = config.timeLimit || 60
     this.setTimeout = config.setTimeout || 3000
-    this.showCam = config.show || { show: false, timeout: undefined }
+    this.showCam = config.showCam || { show: false, timeout: undefined }
     this.folder = config.folder || 'media/'
     this.categoryType = config.type || 'video'
     this.directoryPathFormat = config.directoryPathFormat || 'MMM-Do-YY'
@@ -171,8 +170,9 @@ const RTSPRecorder = class {
   }
 
   startStream() {
+    console.log(this.showCam)
     if (this.showCam.show) {
-      StreamWorker(this.url, this.showCam.timeout)
+      this.streamWorker(this.url, this.showCam.timeout)
         .then(() => {
           console.log('FFplay process exited successfully.');
         })
@@ -181,6 +181,38 @@ const RTSPRecorder = class {
         });
     }
   }
+
+  streamWorker(url, timeout) {
+    return new Promise((resolve, reject) => {
+      const worker = new Worker(path.join(__dirname, 'worker.js'), {
+        workerData: url
+      });
+  
+      worker.on('message', (message) => {
+        if (message === 'exit') {
+          resolve();
+        }
+      });
+  
+      worker.on('error', (error) => {
+        reject(error);
+      });
+  
+      worker.on('exit', (code) => {
+        if (code !== 0) {
+          reject(new Error('FFplay process exited with non-zero code.'));
+        }
+      });
+  
+      if (timeout) {
+        setTimeout(() => {
+          worker.terminate();
+          reject(new Error('FFplay process timed out.'));
+        }, timeout);
+      }
+    });
+  }
+
 }
 
 module.exports = RTSPRecorder
