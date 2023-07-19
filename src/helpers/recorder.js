@@ -24,8 +24,9 @@ const RTSPRecorder = class {
     this.directoryPathFormat = config.directoryPathFormat || 'MMM-Do-YY'
     this.fileNameFormat = config.fileNameFormat || 'YYYY-M-D-h-mm-ss'
     this.audioCodec = config.audioCodec || 'copy'
+    this.options = config.options || { detached: false, stdio: 'ignore' }
     fh.createDirIfNotExists(this.getDirectoryPath())
-    fh.createDirIfNotExists(this.getTodayPath())
+    // fh.createDirIfNotExists(this.getTodayPath())
   }
 
   getDirectoryPath() {
@@ -60,21 +61,19 @@ const RTSPRecorder = class {
       return ['-vn', '-acodec', 'copy']
     }
     if (this.categoryType === 'image') {
-      return ['-rtsp_transport', 'tcp', '-timeout', this.setTimeout, '-y', '-vframes', '1']
+      return ['-vframes', '1']
     }
     return ['-acodec', this.audioCodec, '-vcodec', 'copy']
   }
 
   getChildProcess(fileName) {
-    var args = ['-i', this.url]
+    var args = ['-rtsp_transport', 'tcp', '-timeout', this.setTimeout, '-y', '-i', this.url]
     const mediaArgs = this.getArguments()
     mediaArgs.forEach((item) => {
       args.push(item)
     })
     args.push(fileName)
-    return childProcess.spawn('ffmpeg',
-      args,
-      { detached: false, stdio: 'ignore' })
+    return childProcess.spawn('ffmpeg', args, this.options)
   }
 
   stopRecording() {
@@ -96,23 +95,33 @@ const RTSPRecorder = class {
     this.recordStream()
   }
 
-  captureImage( name,cb, error) {
-    this.writeStream = null
-    const folderPath = this.getMediaTypePath()
-    fh.createDirIfNotExists(folderPath)
-    const fileName = this.getFilename(folderPath)
+  captureImage(name, cb, error) {
+    if (!name) {
+      const folderPath = this.getMediaTypePath()
+      fh.createDirIfNotExists(folderPath)
+      name = this.getFilename(folderPath)
+    }
 
-    this.writeStream = this.getChildProcess(name ? name : fileName)
-    this.writeStream.once('exit', () => {
+    const writeStream = this.getChildProcess(name)
+
+    writeStream.once('exit', () => {
       if (cb) {
         cb()
       }
     })
-    this.writeStream.on('error', (error) => {
+
+    writeStream.on('close', (code) => {
+      if (code !== 0) {
+        error(`ps process exited with code ${code}`);
+      }
+    })
+
+    writeStream.once('error', (error) => {
       if (cb) {
         error(error)
       }
     })
+
   }
 
   killStream() {

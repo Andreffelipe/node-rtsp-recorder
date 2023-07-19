@@ -19,6 +19,7 @@ declare class RTSPRecorder {
         directoryPathFormat?: string
         fileNameFormat?: string
         audioCodec?: string
+        options?:{ detached: boolean, stdio: string }
     })
     getDirectoryPath(): string
     getTodayPath(): string
