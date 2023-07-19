@@ -95,12 +95,13 @@ const RTSPRecorder = class {
     this.recordStream()
   }
 
-  captureImage(cb) {
+  captureImage(cb, name) {
     this.writeStream = null
     const folderPath = this.getMediaTypePath()
     fh.createDirIfNotExists(folderPath)
     const fileName = this.getFilename(folderPath)
-    this.writeStream = this.getChildProcess(fileName)
+
+    this.writeStream = this.getChildProcess(name ? name : fileName)
     this.writeStream.once('exit', () => {
       if (cb) {
         cb()
