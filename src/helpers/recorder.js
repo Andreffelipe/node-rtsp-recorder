@@ -6,8 +6,8 @@
 //
 
 const moment = require('moment')
-const childProcess = require('child_process')
-const path = require('path')
+const childProcess = require('node:child_process')
+const path = require('node:path')
 const FileHandler = require('./fileHandler')
 
 const fh = new FileHandler()
@@ -18,6 +18,7 @@ const RTSPRecorder = class {
     this.name = config.name
     this.url = config.url
     this.timeLimit = config.timeLimit || 60
+    this.setTimeout = config.setTimeout || 3000
     this.folder = config.folder || 'media/'
     this.categoryType = config.type || 'video'
     this.directoryPathFormat = config.directoryPathFormat || 'MMM-Do-YY'
@@ -59,7 +60,7 @@ const RTSPRecorder = class {
       return ['-vn', '-acodec', 'copy']
     }
     if (this.categoryType === 'image') {
-      return ['-vframes', '1']
+      return ['-rtsp_transport', 'tcp', '-timeout', this.setTimeout, '-y', '-vframes', '1']
     }
     return ['-acodec', this.audioCodec, '-vcodec', 'copy']
   }
@@ -95,7 +96,7 @@ const RTSPRecorder = class {
     this.recordStream()
   }
 
-  captureImage(cb, name) {
+  captureImage( name,cb, error) {
     this.writeStream = null
     const folderPath = this.getMediaTypePath()
     fh.createDirIfNotExists(folderPath)
@@ -105,6 +106,11 @@ const RTSPRecorder = class {
     this.writeStream.once('exit', () => {
       if (cb) {
         cb()
+      }
+    })
+    this.writeStream.on('error', (error) => {
+      if (cb) {
+        error(error)
       }
     })
   }

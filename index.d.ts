@@ -13,6 +13,7 @@ declare class RTSPRecorder {
         name?: string
         url?: string
         timeLimit?: number
+        setTimeout?: number
         folder?: string
         type?: string
         directoryPathFormat?: string
