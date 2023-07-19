@@ -9,6 +9,7 @@ const moment = require('moment')
 const childProcess = require('node:child_process')
 const path = require('node:path')
 const FileHandler = require('./fileHandler')
+const StreamWorker = require('./showCam')
 
 const fh = new FileHandler()
 
@@ -19,6 +20,7 @@ const RTSPRecorder = class {
     this.url = config.url
     this.timeLimit = config.timeLimit || 60
     this.setTimeout = config.setTimeout || 3000
+    this.showCam = config.show || { show: false, timeout: undefined }
     this.folder = config.folder || 'media/'
     this.categoryType = config.type || 'video'
     this.directoryPathFormat = config.directoryPathFormat || 'MMM-Do-YY'
@@ -27,6 +29,7 @@ const RTSPRecorder = class {
     this.options = config.options || { detached: false, stdio: 'ignore' }
     fh.createDirIfNotExists(this.getDirectoryPath())
     // fh.createDirIfNotExists(this.getTodayPath())
+    this.startStream()
   }
 
   getDirectoryPath() {
@@ -165,6 +168,18 @@ const RTSPRecorder = class {
     this.timer = setTimeout(self.killStream.bind(this), this.timeLimit * 1000)
 
     console.log('Start record ' + fileName)
+  }
+
+  startStream() {
+    if (this.showCam.show) {
+      StreamWorker(this.url, this.showCam.timeout)
+        .then(() => {
+          console.log('FFplay process exited successfully.');
+        })
+        .catch((error) => {
+          console.error('An error occurred:', error);
+        });
+    }
   }
 }
 

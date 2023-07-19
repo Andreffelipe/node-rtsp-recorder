@@ -35,6 +35,4 @@ declare class Recorder {
     recordStream(): boolean
 }
 
-declare module 'index' {
-  export { Recorder, FileHandler }
-}
+export { Recorder, FileHandler }
