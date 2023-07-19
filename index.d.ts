@@ -8,7 +8,7 @@ declare class FileHandler {
     ): void
 }
 
-declare class RTSPRecorder {
+declare class Recorder {
     constructor(config?: {
         name?: string
         url?: string
@@ -30,13 +30,11 @@ declare class RTSPRecorder {
     getChildProcess(fileName: string): any
     stopRecording(): void
     startRecording(): boolean
-    captureImage(cb?: () => void, name?: string): void
+    captureImage( name: string ,cb?: () => void,error?: (error:Error) => void,): void
     killStream(): void
     recordStream(): boolean
 }
 
-declare const rtspRecorder: typeof RTSPRecorder
-export = rtspRecorder
-
-declare const fileHandler: FileHandler
-export = fileHandler
+declare module 'index' {
+  export { Recorder, FileHandler }
+}
